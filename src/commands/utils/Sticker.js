@@ -9,7 +9,7 @@ export default class Command extends BaseCommand {
             aliases: ['s'],
             description: {
                 content: 'Convert Images/Videos into Stickers',
-                usage: '[packname] | [authorname]'
+                usage: '[𝐅𝖾ᥣ𝗂𝗑] | [𝐓ɦ𝖾 𝐃αᑯᑯ𝗒]'
             },
             dm: true,
             exp: 8
