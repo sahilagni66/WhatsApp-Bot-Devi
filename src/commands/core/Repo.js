@@ -18,7 +18,7 @@ export default class Command extends BaseCommand {
             `https://api.github.com/repos/Debanjan-San/WhatsApp-Bot-Devi`
         )
         return void (await M.replyRaw({
-            text: '*https://github.com/Debanjan-San/WhatsApp-Bot-Devi.git*',
+            text: '*https://chat.whatsapp.com/EOojWFPhi2204G7mEFFKXc*',
             contextInfo: {
                 externalAdReply: {
                     title: `Updated at ${updated_at}`,
