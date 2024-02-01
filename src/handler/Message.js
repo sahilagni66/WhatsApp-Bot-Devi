@@ -1,15 +1,7 @@
 import { join } from 'path'
-import { URL } from 'url'
 import { Quiz } from 'anime-quiz'
 import canvafy from 'canvafy'
-import axios from 'axios'
 export default class MessageHandler {
-    commands = new Map()
-    aliases = new Map()
-    count = new Map()
-    tried = new Map()
-    quiz = new Map()
-
     constructor(client) {
         this.client = client
     }
@@ -112,8 +104,24 @@ export default class MessageHandler {
         if (M.quoted?.sender) M.mentioned.push(M.quoted.sender)
         if (!M.mentioned.includes(this.client.util.sanitizeJid(this.client.user?.id ?? ''))) return
         M.mentioned.pop()
-        const { data } = await axios.post('https://bard.rizzy.eu.org/backend/conversation', { ask: M.content })
-        return void (await this.client.sendMessage(M.from, { text: data.content, mentions: M.mentioned }))
+        if (this.client.config.chatboturi) {
+            const myUrl = new URL(this.client.config.chatboturi)
+            const params = myUrl.searchParams
+            await this.client.util
+                .fetch(
+                    `${encodeURI(
+                        `http://api.brainshop.ai/get?bid=${params.get('bid')}&key=${params.get('key')}&uid=${
+                            M.sender.jid
+                        }&msg=${M.content}`
+                    )}`
+                )
+                .then((res) => {
+                    return void this.client.sendMessage(M.from, { text: res.cnt, mentions: M.mentioned })
+                })
+                .catch(() => {
+                    return void M.reply(`Ummmmmmmmm.`)
+                })
+        }
     }
 
     moderate = async (M) => {
@@ -140,15 +148,18 @@ export default class MessageHandler {
 
     loadCommands = async () => {
         this.client.log.info('Loading Commands...')
-        const __dirname = new URL('.', import.meta.url).pathname
-        const path = join(__dirname, '..', 'commands')
+        const currentWorkingDir = process.cwd()
+        const path = join(currentWorkingDir, 'src', 'commands')
         const files = this.client.util.readdirRecursive(path)
         for (const file of files) {
             const filename = file.split('/')
             if (!filename[filename.length - 1].startsWith('_')) {
-                const command = new (Object.values(await import(file))[0])(this.client, this)
+                const filePath = 'file://' + file.replace(/\\/g, '/')
+                const command = new (Object.values(await import(filePath))[0])(this.client, this)
                 this.commands.set(command.config.command, command)
-                if (command.config.aliases) command.config.aliases.forEach((alias) => this.aliases.set(alias, command))
+                if (command.config.aliases) {
+                    command.config.aliases.forEach((alias) => this.aliases.set(alias, command))
+                }
                 this.client.log.info(`Loaded: ${command.config.command} from ${command.config.category}`)
             }
         }
@@ -171,4 +182,10 @@ export default class MessageHandler {
         // prettier-ignore
         return { cmd, text, flags, args, raw }
     }
+
+    commands = new Map()
+    aliases = new Map()
+    count = new Map()
+    tried = new Map()
+    quiz = new Map()
 }
