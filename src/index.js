@@ -1,10 +1,10 @@
-import { makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMongoDBAuthState } from '@iamrony777/baileys'
-import { createLogger } from './utils/Logger.js'
-import DatabaseHandler from './handler/Database.js'
-import getConfig from './getConfig.js'
-import { MongoClient } from 'mongodb'
-import Devi from './libs/Devi.js'
 import P from 'pino'
+import { fetchLatestBaileysVersion } from '@whiskeysockets/baileys'
+import Devi from './libs/Devi.js'
+import { createLogger } from './utils/Logger.js'
+import getConfig from './getConfig.js'
+import AuthenticationFromDatabase from './libs/Authentication.js'
+import DatabaseHandler from './handler/Database.js'
 ;(async () => {
     const log = createLogger()
     const config = getConfig()
@@ -12,21 +12,19 @@ import P from 'pino'
         log.error('No mongo url provided')
         return process.exit(1)
     }
-    const mongo = new MongoClient(config.mongo, {
-        socketTimeoutMS: 1_00_000,
-        connectTimeoutMS: 1_00_000,
-        waitQueueTimeoutMS: 1_00_000
-    })
-    const databaseHandler = new DatabaseHandler(config, log)
-    const collection = mongo.db(config.session).collection('auth')
-    const authSession = await useMongoDBAuthState(collection)
-    new Devi(config, mongo, authSession, log, databaseHandler, {
+    const database = new DatabaseHandler(config, log)
+    await database.connect()
+    const { useDatabaseAuth } = new AuthenticationFromDatabase(config.session, database)
+    const authSession = await useDatabaseAuth()
+    new Devi(config, authSession, log, database, {
         version: (await fetchLatestBaileysVersion()).version,
-        auth: {
-            creds: authSession.state.creds,
-            keys: makeCacheableSignalKeyStore(authSession.state.keys)
-        },
-        logger: P({ level: 'silent' }),
-        printQRInTerminal: true
+        auth: authSession.state,
+        logger: P({ level: 'fatal' }),
+        printQRInTerminal: true,
+        getMessage: async () => {
+            return {
+                conversation: ''
+            }
+        }
     }).connect()
 })()
