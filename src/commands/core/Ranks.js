@@ -9,6 +9,7 @@ export default class Command extends BaseCommand {
             description: {
                 content: 'View available ranks.'
             },
+            dm: true,
             exp: 7
         })
     }
@@ -23,7 +24,7 @@ export default class Command extends BaseCommand {
 ${keys
     .map(
         (x) =>
-            `${ranks[x].emoji} *${x}*\n*Required Exp: ${ranks[x].exp}*\n*Reward Credits: ${ranks[x].rewardCredits}*\n`
+            `${ranks[x].emoji} *${x}*\n*Required Exp: ${ranks[x].exp}*\n`
     )
     .join('\n')}
         `

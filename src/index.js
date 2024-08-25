@@ -19,6 +19,7 @@ import DatabaseHandler from './handler/Database.js'
     new Devi(config, authSession, log, database, {
         version: (await fetchLatestBaileysVersion()).version,
         auth: authSession.state,
+        syncFullHistory: false,
         logger: P({ level: 'fatal' }),
         printQRInTerminal: true,
         getMessage: async () => {
